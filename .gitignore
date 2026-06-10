@@ -1,0 +1,6 @@
+run/
+classes_smali/
+__pycache__/
+*.pyc
+*.pyo
+*.log

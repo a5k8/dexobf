@@ -211,7 +211,6 @@ def main():
     smali2dex(SMALI_DIR, OUT_DEX)
     if os.path.exists(SMALI_DIR):
         shutil.rmtree(SMALI_DIR)
-        print(f"已删除 {SMALI_DIR}，释放空间")
     print(f"全部完成！输出：{OUT_DEX}")
 if __name__ == "__main__":
     main()
