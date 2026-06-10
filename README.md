@@ -1,6 +1,6 @@
 ## dexobf
 dex类名混淆工具（Python）
-[English](https://github.com/a/b/c)
+[English](https://github.com/a5k8/dexobf)
 ## 说明
 把dex中的所有类都放到指定包名下以混淆，同时进行类名混淆，运行产生的文件统一存放至 `/run` 目录。
 ## 环境部署
