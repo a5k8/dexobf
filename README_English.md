@@ -28,11 +28,13 @@ or
 python dexobf.py  # Windows / Termux |such as python dexobf.py app.package
 ```
 ## Directory Structure
+```
 dexobf/
 ├── dexobf.py
 ├── dictionary.txt
 ├── classes.dex
 ├── .gitignore
 └── README.md
+```
 ## Notice
 This project is for learning purposes only. Do not use it for illegal activities.

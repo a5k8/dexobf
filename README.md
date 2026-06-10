@@ -27,11 +27,13 @@ python3 dexobf.py 指定包名 # Linux / macOS 如 python3 dexobf.py app.package
 python dexobf.py 指定包名 # Windows / Termux 如 python dexobf.py app.package
 ```
 ##目录结构
+```
 dexobf/
 ├── dexobf.py
 ├── dictionary.txt
 ├── classes.dex
 ├── .gitignore
 └── README.md
+```
 ## 声明
 本项目仅供学习交流，请勿用于非法用途。
