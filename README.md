@@ -4,7 +4,7 @@ dex类名混淆工具（Python）
 ## 说明
 把dex中的所有类都放到指定包名下以混淆，同时进行类名混淆，运行产生的文件统一存放至 `/run` 目录。
 ## 环境部署
-本工具依赖 Python，若未安装python，根据对应系统执行安装命令：
+本工具依赖 Python 与 Git，未安装请根据对应系统执行以下命令：
 ```bash
 # Debian / Ubuntu
 sudo apt update && sudo apt install python3 git

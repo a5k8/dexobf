@@ -5,7 +5,7 @@ DEX class name obfuscator (Python)
 Move all classes in DEX files to the designated package for obfuscation and rename all class names. All generated files will be stored in the `/run` directory.
 
 ## Environment Setup
-This tool requires Python. If Python is not installed, run the corresponding command for your system:
+This tool requires Python and Git. Run the commands below if they are not installed:
 ```bash
 # Debian / Ubuntu
 sudo apt update && sudo apt install python3 git
