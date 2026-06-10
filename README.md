@@ -26,7 +26,7 @@ python3 dexobf.py 指定包名 # Linux / macOS 如 python3 dexobf.py app.package
 或
 python dexobf.py 指定包名 # Windows / Termux 如 python dexobf.py app.package
 ```
-##目录结构
+## 目录结构
 ```
 dexobf/
 ├── dexobf.py
