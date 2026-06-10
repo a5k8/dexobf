@@ -27,6 +27,7 @@ python3 dexobf.py  # Linux / macOS |such as python3 dexobf.py app.package
 or
 python dexobf.py  # Windows / Termux |such as python dexobf.py app.package
 ```
+After obfuscation, please update class names in AndroidManifest.xml. You can find the original and new class name mappings in run/mapping.txt.
 ## Directory Structure
 ```
 dexobf/

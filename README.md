@@ -26,6 +26,7 @@ python3 dexobf.py 指定包名 # Linux / macOS 如 python3 dexobf.py app.package
 或
 python dexobf.py 指定包名 # Windows / Termux 如 python dexobf.py app.package
 ```
+混淆完成后，需同步替换 AndroidManifest.xml 中的类名，新旧类名对应关系可在 run/mapping.txt 中查看检索。
 ## 目录结构
 ```
 dexobf/
