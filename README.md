@@ -1,4 +1,4 @@
-## dexobf
+## dex混淆
 dex类名混淆工具（Python）
 [English](https://github.com/a5k8/dexobf/blob/4eec26dc45161f45e6424f22d4ee4e3bd0a31e9b/README_English.md)
 ## 说明
