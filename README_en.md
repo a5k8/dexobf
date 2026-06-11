@@ -2,7 +2,7 @@
 DEX class name obfuscator (Python)
 [简体中文](https://github.com/a5k8/dexobf/blob/8c9fbce6cf0be9d165e5c8749620c84e2299a2c7/README.md)
 ## Description
-Move all classes in DEX files to the designated package for obfuscation and rename all class names. All generated files will be stored in the `/dexobf` directory.
+Move all classes in DEX files to the designated package for obfuscation and rename all class names. All generated files will be stored in the `run/` directory.
 ## Environment Setup
 This tool requires **Python, Git, Java 8+**. Run the commands below if they are not installed:
 ```bash
@@ -18,16 +18,16 @@ This tool requires **Python, Git, Java 8+**. Run the commands below if they are 
  pkg update && pkg install python git openjdk-17
 ```
 ## Usage
-Put `classes.dex` into the project root directory first, then run the commands below:
+Put `classes.dex` into `dexobf/` first, then run the commands below:
 ```bash
 git clone https://github.com/a5k8/dexobf.git
 cd dexobf
 # Linux / macOS
-python3 dexobf.py #Example: python3 dexobf.py app.package
+python3 dexobf_en.py #Example: python3 dexobf_en.py app.package
 # Windows / Termux
-python dexobf.py #Example: python dexobf.py app.package
+python dexobf_en.py #Example: python dexobf_en.py app.package
 ```
-After obfuscation, please update class names in `AndroidManifest.xml`. You can find the original and new class name mappings in `dexobf/mapping.txt`.
+After obfuscation, please update class names in `AndroidManifest.xml`. You can find the original and new class name mappings in `run/mapping.txt`.
 ## Directory Structure
 ```
 dexobf/

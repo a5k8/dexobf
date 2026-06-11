@@ -20,27 +20,27 @@ def dex2smali(dex_path, out_dir):
     if os.path.exists(out_dir):
         shutil.rmtree(out_dir)
     os.makedirs(out_dir)
-    print("反编译中......")
+    print("Decompiling......")
     try:
         subprocess.run(
             ["java", "-jar", BAKSMALI_JAR, "d", dex_path, "-o", out_dir],
             check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"反编译失败：{e}")
+        print(f"Decompilation failed: {e}")
         sys.exit(1)
-    print("反编译完成")
+    print("Decompilation completed")
 def smali2dex(smali_dir, dex_path):
-    print("编译中......")
+    print(f"Compiling......")
     try:
         subprocess.run(
             ["java", "-jar", SMALI_JAR, "a", smali_dir, "-o", dex_path],
             check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"编译失败：{e}")
+        print(f"Compilation failed: {e}")
         sys.exit(1)
-    print("编译完成")
+    print("Compilation completed")
 def load_used_full():
     if not os.path.exists(TEMP_FILE):
         return set()
@@ -127,13 +127,13 @@ def gen_mapping(classes, app_package):
     mapping_lines.sort(key=lambda x: len(x))
     new_classes = [line.split("->")[-1].strip() for line in mapping_lines]
     if len(new_classes) != len(set(new_classes)):
-        print("错误：类名重复")
+        print("Error: Duplicate class names")
         sys.exit(1)
     os.makedirs(BASE_DIR, exist_ok=True)
     with open(MAP_FILE, "w", encoding="utf-8") as f:
         f.writelines(mapping_lines)
     save_used_full(used_full)
-    print("mapping.txt生成完成")
+    print("mapping.txt generated")
 def obfuscate_smali(smali_root):
     text_rules = []
     path_map = {}
@@ -147,7 +147,7 @@ def obfuscate_smali(smali_root):
             old_raw = old_full.lstrip("L").rstrip(";")
             new_raw = new_full.lstrip("L").rstrip(";")
             path_map[old_raw] = new_raw
-    print("替换类引用")
+    print("Replacing class references")
     for root, _, files in os.walk(smali_root):
         for fname in files:
             if not fname.endswith(".smali"):
@@ -159,7 +159,7 @@ def obfuscate_smali(smali_root):
                 content = content.replace(old_s, new_s)
             with open(f_path, "w", encoding="utf-8") as fp:
                 fp.write(content)
-    print("重命名+移动文件")
+    print("Renaming and moving files")
     for root, _, files in os.walk(smali_root):
         for fname in files:
             if not fname.endswith(".smali"):
@@ -177,40 +177,40 @@ def obfuscate_smali(smali_root):
             new_file = os.path.join(target_dir, f"{target_cls}.smali")
             if old_file != new_file:
                 os.rename(old_file, new_file)
-    print("清理空目录")
+    print("Cleaning empty directories")
     for root, dirs, _ in os.walk(smali_root, topdown=False):
         for d in dirs:
             d_path = os.path.join(root, d)
             if not os.listdir(d_path):
                 os.rmdir(d_path)
-    print("混淆即将完成")
+    print("Obfuscation almost done")
 def main():
     clean_cache()
     if len(sys.argv) != 2:
-        print("用法：python dexobf.py 包名")
+        print("Usage: python dexobf.py package_name")
         return
     if not os.path.exists(ORIG_DEX):
-        print(f"错误：缺少 {ORIG_DEX}")
+        print(f"Error: Missing {ORIG_DEX}")
         return
     if not os.path.exists(DICT_FILE):
-        print(f"错误：缺少 {DICT_FILE}")
+        print(f"Error: Missing {DICT_FILE}")
         return
     app_package = sys.argv[1]
     os.makedirs(BASE_DIR, exist_ok=True)
     dex2smali(ORIG_DEX, SMALI_DIR)
     classes = scan_smali_classes()
     if not classes:
-        print("未扫描到任何类，dex可能为空或损坏")
+        print("No classes found, dex may be empty or corrupted")
         return
     with open(TREE_FILE, "w", encoding="utf-8") as f:
         for c in classes:
             f.write(c + "\n")
-    print(f"共 {len(classes)} 个类")
+    print(f"Total {len(classes)} classes")
     gen_mapping(classes, app_package)
     obfuscate_smali(SMALI_DIR)
     smali2dex(SMALI_DIR, ORIG_DEX)
     if os.path.exists(SMALI_DIR):
         shutil.rmtree(SMALI_DIR)
-    print(f"完成！输出：{ORIG_DEX}")
+    print(f"Completed! Output: {ORIG_DEX}")
 if __name__ == "__main__":
     main()
