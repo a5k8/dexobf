@@ -3,43 +3,39 @@ import os
 import re
 import shutil
 import subprocess
-import urllib.request
-BASE_DIR = "run"
+BASE_DIR = "dexobf"
 SMALI_DIR = "classes_smali"
 ORIG_DEX = "classes.dex"
-OUT_DEX = "classes.dex"
 MAP_FILE = os.path.join(BASE_DIR, "mapping.txt")
 TEMP_FILE = os.path.join(BASE_DIR, "temp.txt")
 TREE_FILE = os.path.join(BASE_DIR, "tree.txt")
 DICT_FILE = "dictionary.txt"
-BAKSMALI_JAR = os.path.join(BASE_DIR, "baksmali-2.5.2.jar")
-SMALI_JAR = os.path.join(BASE_DIR, "smali-2.5.2.jar")
-URL_BAKSMALI = "https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.5.2.jar"
-URL_SMALI = "https://bitbucket.org/JesusFreke/smali/downloads/smali-2.5.2.jar"
-def download_jar():
-    os.makedirs(BASE_DIR, exist_ok=True)
-    if not os.path.exists(BAKSMALI_JAR):
-        print(f"下载 baksmali-2.5.2.jar（1.22MB） 到 {BASE_DIR}...")
-        urllib.request.urlretrieve(URL_BAKSMALI, BAKSMALI_JAR)
-    if not os.path.exists(SMALI_JAR):
-        print(f"下载 smali-2.5.2.jar（943.03KB） 到 {BASE_DIR}...")
-        urllib.request.urlretrieve(URL_SMALI, SMALI_JAR)
+BAKSMALI_JAR = "baksmali.jar"
+SMALI_JAR = "smali.jar"
 def dex2smali(dex_path, out_dir):
     if os.path.exists(out_dir):
         shutil.rmtree(out_dir)
     os.makedirs(out_dir)
     print(f"反编译：{dex_path} → {out_dir}")
-    subprocess.run(
-        ["java", "-jar", BAKSMALI_JAR, "d", dex_path, "-o", out_dir],
-        check=True
-    )
+    try:
+        subprocess.run(
+            ["java", "-jar", BAKSMALI_JAR, "d", dex_path, "-o", out_dir],
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"反编译失败：{e}")
+        sys.exit(1)
     print("反编译完成")
 def smali2dex(smali_dir, dex_path):
     print(f"编译：{smali_dir} → {dex_path}")
-    subprocess.run(
-        ["java", "-jar", SMALI_JAR, "a", smali_dir, "-o", dex_path],
-        check=True
-    )
+    try:
+        subprocess.run(
+            ["java", "-jar", SMALI_JAR, "a", smali_dir, "-o", dex_path],
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"编译失败：{e}")
+        sys.exit(1)
     print("编译完成")
 def load_used_full():
     if not os.path.exists(TEMP_FILE):
@@ -133,7 +129,7 @@ def gen_mapping(classes, app_package):
     with open(MAP_FILE, "w", encoding="utf-8") as f:
         f.writelines(mapping_lines)
     save_used_full(used_full)
-    print(f"mapping.txt生成完成")
+    print("mapping.txt生成完成")
 def obfuscate_smali(smali_root):
     text_rules = []
     path_map = {}
@@ -194,13 +190,12 @@ def main():
     if not os.path.exists(DICT_FILE):
         print(f"错误：缺少 {DICT_FILE}")
         return
-    download_jar()
     app_package = sys.argv[1]
     os.makedirs(BASE_DIR, exist_ok=True)
     dex2smali(ORIG_DEX, SMALI_DIR)
     classes = scan_smali_classes()
     if not classes:
-        print("未扫描到任何类，dex 可能为空或损坏")
+        print("未扫描到任何类，dex可能为空或损坏")
         return
     with open(TREE_FILE, "w", encoding="utf-8") as f:
         for c in classes:
@@ -208,9 +203,9 @@ def main():
     print(f"共 {len(classes)} 个类")
     gen_mapping(classes, app_package)
     obfuscate_smali(SMALI_DIR)
-    smali2dex(SMALI_DIR, OUT_DEX)
+    smali2dex(SMALI_DIR, ORIG_DEX)
     if os.path.exists(SMALI_DIR):
         shutil.rmtree(SMALI_DIR)
-    print(f"全部完成！输出：{OUT_DEX}")
+    print(f"完成！输出：{ORIG_DEX}")
 if __name__ == "__main__":
     main()
