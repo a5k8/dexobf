@@ -1,6 +1,6 @@
 ## dexobf
 DEX class name obfuscator (Python)
-[简体中文](https://github.com/a5k8/dexobf/blob/663eb64f5196153849304a95defceb33bcb37cdb/README.md)
+[简体中文](https://github.com/a5k8/dexobf/blob/8c9fbce6cf0be9d165e5c8749620c84e2299a2c7/README.md)
 ## Description
 Move all classes in DEX files to the designated package for obfuscation and rename all class names. All generated files will be stored in the `/dexobf` directory.
 ## Environment Setup
