@@ -7,13 +7,13 @@ BASE_DIR = "run"
 SMALI_DIR = "classes_smali"
 ORIG_DEX = "classes.dex"
 MAP_FILE = os.path.join(BASE_DIR, "mapping.txt")
-TEMP_FILE = os.path.join(BASE_DIR, "temp.txt")
 TREE_FILE = os.path.join(BASE_DIR, "tree.txt")
 DICT_FILE = "dictionary.txt"
 BAKSMALI_JAR = "baksmali.jar"
 SMALI_JAR = "smali.jar"
 def clean_cache():
-    for f in [MAP_FILE, TEMP_FILE, TREE_FILE]:
+    os.makedirs(BASE_DIR, exist_ok=True)
+    for f in [MAP_FILE, TREE_FILE]:
         if os.path.exists(f):
             os.remove(f)
 def dex2smali(dex_path, out_dir):
@@ -31,7 +31,7 @@ def dex2smali(dex_path, out_dir):
         sys.exit(1)
     print("Decompilation completed")
 def smali2dex(smali_dir, dex_path):
-    print(f"Compiling......")
+    print("Compiling......")
     try:
         subprocess.run(
             ["java", "-jar", SMALI_JAR, "a", smali_dir, "-o", dex_path],
@@ -41,24 +41,21 @@ def smali2dex(smali_dir, dex_path):
         print(f"Compilation failed: {e}")
         sys.exit(1)
     print("Compilation completed")
-def load_used_full():
-    if not os.path.exists(TEMP_FILE):
-        return set()
-    with open(TEMP_FILE, "r", encoding="utf-8") as f:
-        return set(line.strip() for line in f if line.strip())
-def save_used_full(used):
-    with open(TEMP_FILE, "w", encoding="utf-8") as f:
-        for name in sorted(used):
-            f.write(name + "\n")
-def next_fragment(dict_list, used_frag):
-    idx = 0
-    while True:
-        for name in dict_list:
-            cand = name if idx == 0 else f"{name}{idx}"
-            if cand not in used_frag:
-                used_frag.add(cand)
-                return cand
-        idx += 1
+def load_dictionary(dict_path="dictionary.txt"):
+    if not os.path.exists(dict_path):
+        print(f"Error! {dict_path} not found")
+        sys.exit(1)
+    dict_list = []
+    with open(dict_path, "r", encoding="utf-8") as f:
+        for line in f:
+            name = line.strip()
+            if name:
+                dict_list.append(name)
+    if not dict_list:
+        print("Error! No valid names in dictionary.txt")
+        sys.exit(1)
+    print(f"Dictionary loaded, {len(dict_list)} valid names total")
+    return dict_list
 def scan_smali_classes():
     classes = []
     for root, _, files in os.walk(SMALI_DIR):
@@ -67,14 +64,13 @@ def scan_smali_classes():
                 rel = os.path.relpath(os.path.join(root, f), SMALI_DIR)
                 cls = rel.replace(".smali", "").replace(os.sep, "/")
                 classes.append(f"L{cls};")
-    return sorted(list(set(classes)))
-def gen_mapping(classes, app_package):
+    classes = list(set(classes))
+    classes.sort()
+    return classes
+def gen_mapping(classes, app_package, dict_list):
     pkg_path = app_package.replace(".", "/") + "/"
-    with open(DICT_FILE, "r", encoding="utf-8") as f:
-        dict_list = [line.strip() for line in f if line.strip()]
-    used_full = load_used_full()
-    used_frag = set()
     chain_map = {}
+    dict_ptr = 0
     num_pattern = re.compile(r'^\d+$')
     mapping_lines = []
     all_chains = set()
@@ -92,14 +88,16 @@ def gen_mapping(classes, app_package):
             chain = "$".join(parts[:i+1])
             all_chains.add(chain)
     for chain in sorted(all_chains):
-        chain_map[chain] = next_fragment(dict_list, used_frag)
+        if dict_ptr >= len(dict_list):
+            print("Error! Insufficient dictionary entries, please expand dictionary.txt")
+            sys.exit(1)
+        chain_map[chain] = dict_list[dict_ptr]
+        dict_ptr += 1
     for old_full in classes:
         old_stripped = old_full[1:-1]
         if "/" in old_stripped:
-            pkg, cls = old_stripped.rsplit("/", 1)
-            pkg += "/"
+            _, cls = old_stripped.rsplit("/", 1)
         else:
-            pkg = ""
             cls = old_stripped
         tokens = re.split(r'(\$+)', cls)
         seps = [s for s in tokens[1::2] if s]
@@ -117,22 +115,10 @@ def gen_mapping(classes, app_package):
             if i < len(seps):
                 new_cls += seps[i]
         new_full = f"L{pkg_path}{new_cls};"
-        idx = 1
-        while new_full in used_full:
-            new_cls += str(idx)
-            new_full = f"L{pkg_path}{new_cls};"
-            idx += 1
-        used_full.add(new_full)
         mapping_lines.append(f"{old_full}->{new_full}\n")
     mapping_lines.sort(key=lambda x: len(x))
-    new_classes = [line.split("->")[-1].strip() for line in mapping_lines]
-    if len(new_classes) != len(set(new_classes)):
-        print("Error: Duplicate class names")
-        sys.exit(1)
-    os.makedirs(BASE_DIR, exist_ok=True)
     with open(MAP_FILE, "w", encoding="utf-8") as f:
         f.writelines(mapping_lines)
-    save_used_full(used_full)
     print("mapping.txt generated")
 def obfuscate_smali(smali_root):
     text_rules = []
@@ -147,7 +133,7 @@ def obfuscate_smali(smali_root):
             old_raw = old_full.lstrip("L").rstrip(";")
             new_raw = new_full.lstrip("L").rstrip(";")
             path_map[old_raw] = new_raw
-    print("Replacing class references")
+    print("Replacing class references......")
     for root, _, files in os.walk(smali_root):
         for fname in files:
             if not fname.endswith(".smali"):
@@ -159,7 +145,7 @@ def obfuscate_smali(smali_root):
                 content = content.replace(old_s, new_s)
             with open(f_path, "w", encoding="utf-8") as fp:
                 fp.write(content)
-    print("Renaming and moving files")
+    print("Renaming and moving files......")
     for root, _, files in os.walk(smali_root):
         for fname in files:
             if not fname.endswith(".smali"):
@@ -177,36 +163,37 @@ def obfuscate_smali(smali_root):
             new_file = os.path.join(target_dir, f"{target_cls}.smali")
             if old_file != new_file:
                 os.rename(old_file, new_file)
-    print("Cleaning empty directories")
+    print("Cleaning empty directories......")
     for root, dirs, _ in os.walk(smali_root, topdown=False):
         for d in dirs:
             d_path = os.path.join(root, d)
             if not os.listdir(d_path):
                 os.rmdir(d_path)
-    print("Obfuscation almost done")
+    print("Obfuscation nearly complete")
 def main():
     clean_cache()
     if len(sys.argv) != 2:
-        print("Usage: python dexobf.py package_name")
+        print("Usage: python dexobf.py <package_name>")
         return
     if not os.path.exists(ORIG_DEX):
-        print(f"Error: Missing {ORIG_DEX}")
+        print(f"Error! {ORIG_DEX} missing")
         return
     if not os.path.exists(DICT_FILE):
-        print(f"Error: Missing {DICT_FILE}")
+        print(f"Error! {DICT_FILE} missing")
         return
     app_package = sys.argv[1]
     os.makedirs(BASE_DIR, exist_ok=True)
     dex2smali(ORIG_DEX, SMALI_DIR)
+    dict_list = load_dictionary()
     classes = scan_smali_classes()
     if not classes:
-        print("No classes found, dex may be empty or corrupted")
+        print("Error! No classes found")
         return
     with open(TREE_FILE, "w", encoding="utf-8") as f:
         for c in classes:
             f.write(c + "\n")
     print(f"Total {len(classes)} classes")
-    gen_mapping(classes, app_package)
+    gen_mapping(classes, app_package, dict_list)
     obfuscate_smali(SMALI_DIR)
     smali2dex(SMALI_DIR, ORIG_DEX)
     if os.path.exists(SMALI_DIR):
